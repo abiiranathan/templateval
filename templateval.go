@@ -30,7 +30,7 @@ type ValidationError struct {
 
 // Implements the error interface.
 func (e ValidationError) Error() string {
-	return fmt.Sprintf("field '%s': %s", e.Field, e.Message)
+	return fmt.Sprintf("Field '%s': %s", e.Field, e.Message)
 }
 
 // ValidationErrors is a collection of validation errors
@@ -582,56 +582,58 @@ func NewRegistry() *TemplateRegistry {
 	}
 }
 
-// Register adds a validator for a template
-func (r *TemplateRegistry) Register(templateName string, validator *TemplateValidator) {
-	if templateName == "" {
+// Register adds a validator for a template. If template is an empty string, it will panic.
+// if validator is nil, no registration will happen.
+func (r *TemplateRegistry) Register(name string, validator *TemplateValidator) {
+	if name == "" {
 		panic("template name cannot be empty")
 	}
+
 	if validator == nil {
-		panic("validator cannot be nil")
+		return
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.validators[templateName] = validator
+	r.validators[name] = validator
 }
 
 // Unregister removes a validator for a template
-func (r *TemplateRegistry) Unregister(templateName string) {
+func (r *TemplateRegistry) Unregister(name string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	delete(r.validators, templateName)
+	delete(r.validators, name)
 }
 
 // Validate validates variables for a specific template
-func (r *TemplateRegistry) Validate(templateName string, variables map[string]any) error {
+func (r *TemplateRegistry) Validate(name string, variables map[string]any) error {
 	r.mu.RLock()
-	validator, exists := r.validators[templateName]
+	validator, exists := r.validators[name]
 	r.mu.RUnlock()
 
 	if !exists {
-		return fmt.Errorf("no validator registered for template '%s'", templateName)
+		return fmt.Errorf("no validator registered for template '%s'", name)
 	}
 	return validator.Validate(variables)
 }
 
 // ValidatePartial validates variables partially for a specific template
-func (r *TemplateRegistry) ValidatePartial(templateName string, variables map[string]any) error {
+func (r *TemplateRegistry) ValidatePartial(name string, variables map[string]any) error {
 	r.mu.RLock()
-	validator, exists := r.validators[templateName]
+	validator, exists := r.validators[name]
 	r.mu.RUnlock()
 
 	if !exists {
-		return fmt.Errorf("no validator registered for template '%s'", templateName)
+		return fmt.Errorf("no validator registered for template '%s'", name)
 	}
 	return validator.ValidatePartial(variables)
 }
 
 // GetValidator returns the validator for a template
-func (r *TemplateRegistry) GetValidator(templateName string) (*TemplateValidator, bool) {
+func (r *TemplateRegistry) GetValidator(name string) (*TemplateValidator, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	validator, exists := r.validators[templateName]
+	validator, exists := r.validators[name]
 	return validator, exists
 }
 
@@ -648,10 +650,10 @@ func (r *TemplateRegistry) ListTemplates() []string {
 }
 
 // HasTemplate checks if a template is registered
-func (r *TemplateRegistry) HasTemplate(templateName string) bool {
+func (r *TemplateRegistry) HasTemplate(name string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	_, exists := r.validators[templateName]
+	_, exists := r.validators[name]
 	return exists
 }
 
