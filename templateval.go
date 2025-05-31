@@ -612,7 +612,7 @@ func (r *TemplateRegistry) Validate(name string, variables map[string]any) error
 	r.mu.RUnlock()
 
 	if !exists {
-		return fmt.Errorf("no validator registered for template '%s'", name)
+		return nil // No validator registered
 	}
 	return validator.Validate(variables)
 }
@@ -624,7 +624,7 @@ func (r *TemplateRegistry) ValidatePartial(name string, variables map[string]any
 	r.mu.RUnlock()
 
 	if !exists {
-		return fmt.Errorf("no validator registered for template '%s'", name)
+		return nil // No validator registered
 	}
 	return validator.ValidatePartial(variables)
 }
